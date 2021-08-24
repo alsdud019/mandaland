@@ -1,9 +1,11 @@
 import React from "react"
 import * as THREE from "three"
+import  {OrbitControls}  from "drei"
+//import * from "Math"
 
 class Three extends React.Component {
     componentDidMount() {
-        let camera, scene, renderer
+        let camera, controls, scene, renderer
         let plane
         let pointer,
             raycaster,
@@ -13,16 +15,44 @@ class Three extends React.Component {
         const objects = []
 
         init()
-        renderThree()
+        //renderThree()
+        animate()
 
         function init() {
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
-            camera.position.set(500, 800, 1300)
-            camera.lookAt(0, 0, 0)
 
             scene = new THREE.Scene()
             scene.background = new THREE.Color(0xf0f0f0)
 
+            renderer = new THREE.WebGLRenderer({ antialias: true })
+            renderer.setPixelRatio(window.devicePixelRatio)
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            document.body.appendChild(renderer.domElement)
+
+            document.addEventListener("pointermove", onPointerMove)
+            document.addEventListener("pointerdown", onPointerDown)
+            document.addEventListener("keydown", onDocumentKeyDown)
+            document.addEventListener("keyup", onDocumentKeyUp)
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000)
+            camera.position.set(500, 800, 1300)
+            camera.lookAt(0, 0, 0)
+
+            // controls
+
+			controls = new OrbitControls(camera, renderer.domElement)
+			controls.listenToKeyEvents(window)
+
+            controls.enableDamping = true
+			controls.dampingFactor = 0.05
+
+			controls.screenSpacePanning = false
+
+			// controls.minDistance = 100
+            
+			controls.maxDistance = 1500 //시야의 최대 거리 
+
+			controls.maxPolarAngle = Math.PI / 2
+          
             // roll-over helpers => 마우스 올리면 빨간색으로 가이드라인 보여줌
 
             const rollOverGeo = new THREE.BoxGeometry(50, 50, 50)
@@ -42,8 +72,7 @@ class Three extends React.Component {
             const gridHelper = new THREE.GridHelper(1000, 20)
             scene.add(gridHelper)
 
-            //
-
+            
             raycaster = new THREE.Raycaster()
             pointer = new THREE.Vector2()
 
@@ -63,17 +92,7 @@ class Three extends React.Component {
             const directionalLight = new THREE.DirectionalLight(0xffffff)
             directionalLight.position.set(1, 0.75, 0.5).normalize()
             scene.add(directionalLight)
-
-            renderer = new THREE.WebGLRenderer({ antialias: true })
-            renderer.setPixelRatio(window.devicePixelRatio)
-            renderer.setSize(window.innerWidth, window.innerHeight)
-            document.body.appendChild(renderer.domElement)
-
-            document.addEventListener("pointermove", onPointerMove)
-            document.addEventListener("pointerdown", onPointerDown)
-            document.addEventListener("keydown", onDocumentKeyDown)
-            document.addEventListener("keyup", onDocumentKeyUp)
-
+            
             //
 
             window.addEventListener("resize", onWindowResize)
@@ -151,6 +170,16 @@ class Three extends React.Component {
                     break
             }
         }
+
+        function animate() {
+
+			requestAnimationFrame(animate)
+
+			controls.update() // only required if controls.enableDamping = true, or if controls.autoRotate = true
+
+			renderThree()
+
+		}
 
         function renderThree() {
             renderer.render(scene, camera)
